@@ -1,4 +1,4 @@
-== Coworking MetaData
+## Coworking MetaData
 
 This repository contains the metadata files that are used to drive
 applications (like maps and such) that do useful things for the Coworking
@@ -13,7 +13,7 @@ The primary files are:
 These files may be used by anybody for any purpose. Typically they are used to
 generate maps, with site locations.
 
-== Spider Prerequisites
+## Spider Prerequisites
 
 This repository uses a Perl script to spider the urls in `sites.yaml` and
 generate the YAML and JSON files.
