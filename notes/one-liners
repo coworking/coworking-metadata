@@ -1,0 +1,8 @@
+Some Perl 1 liners to count data:
+
+> perl -MYAML::XS=:all -le 'my$c=0;do{$c++if$_->{Name}}for(@{LoadFile(shift)});print$c' metadata.yaml 
+464
+> perl -MYAML::XS=:all -le 'my$c=0;do{$c++if$_->{URL}}for(@{LoadFile(shift)});print$c' metadata.yaml 
+458
+> perl -MYAML::XS=:all -le 'my$c=0;do{$c++if$_->{info}{yelp}}for(@{LoadFile(shift)});print$c' metadata.yaml 
+81
