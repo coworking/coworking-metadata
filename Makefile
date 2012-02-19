@@ -1,16 +1,20 @@
+SPREADSHEET = data/coworking-app-data/sheet1.csv
 YAML2JSON := perl -MYAML::XS -MJSON::XS \
         -e 'print encode_json YAML::XS::LoadFile(shift)'
 
-all: metadata.yaml metadata.json
+all: metadata.yaml metadata.json metadata.jsonp
 
-metadata.yaml: sites.yaml
-	./bin/spider $< > $@
+metadata.yaml: $(SPREADSHEET)
+	./bin/update-metadata-from-spreadsheet $@ $<
 
 metadata.json: metadata.yaml
 	$(YAML2JSON) $< > $@
 
-update1:
-	./bin/update-metadata-from-spreadsheet
+metadata.jsonp: metadata.json
+	echo 'Coworking.add_metadata(' > $@
+	./bin/filter-json $< geo >> $@
+	echo '' >> $@
+	echo ');' >> $@
 
-clean purge:
-	rm -f metadata.yaml metadata.json
+spider: sites.yaml
+	#./bin/spider $< > $@
