@@ -1,0 +1,130 @@
+#!/usr/bin/env perl
+
+use strict;
+use utf8;
+use YAML::XS ':all';
+use Text::CSV::Slurp;
+use XXX;
+
+my $SPREADSHEET = './data/coworking-app-data/sheet1.csv';
+my $METAFILE = './metadata.yaml';
+
+my %input;
+my %meta;
+
+my $rules = Load <<'...';
+Name: Name
+Website: URL
+Bio (150-word or less): _Bio
+
+Address Line 1: address.0
+Address Line 2: address.1
+Address Line 3: address.2
+City: address.3
+State/Province: address.4
+ZIP/Post Code: address.5
+Country: address.6
+
+Email Address: contact.email
+Fax Number: contact.fax
+Phone number: contact.phone
+
+Latitude: geo.lat
+Longitude: geo.long
+
+Facebook page: info.facebook
+Link to logo (photo only): info.logo
+Link to Google Places page: info.places
+Twitter handle: info.twitter
+Link to Yelp page: info.yelp
+
+Free drop-in? (y/n): pay.dropin.free
+Drop-in day rate ($): pay.dropin.rate
+Drop-in comments: pay.dropin.comment
+Coworking Visa Accepted? (y/n): pay.visa
+...
+
+sub reformat {
+    my $hash = shift;
+    my $data = {};
+    for my $Key (keys %$rules) {
+        my $key = $rules->{$Key};
+        XXX([$Key, $hash]) unless exists $hash->{$Key};
+        my $value = $hash->{$Key};
+        next unless defined $value;
+        $value =~ s/^\s*(.*?)\s*$/$1/s;
+        if (length($value)) {
+            if ($key =~ /^(\w+)$/) {
+                $data->{$1} = $value;
+            }
+            elsif ($key =~ /^(\w+)\.(\d)$/) {
+                $data->{$1}[$2] = $value;
+            }
+            elsif ($key =~ /^(\w+)\.(\w+)$/) {
+                $data->{$1}{$2} = $value;
+            }
+            elsif ($key =~ /^(\w+)\.(\w+)\.(\w+)$/) {
+                $data->{$1}{$2}{$3} = $value;
+            }
+            else {
+                die "Bad key: '$key'";
+            }
+        }
+    }
+    if (exists $data->{address}) {
+        $data->{address} = [ map { $_ || '.' } @{$data->{address}} ];
+    }
+    if (exists $data->{URL}) {
+        my $url = $data->{URL};
+        # warn $url if $url =~ /\s/ or $url !~ /\w\.\w/;
+        $url = "http://$url" unless $url =~ m!^https?://!;
+        die "'$url'" unless $url =~ m!^https?://\w!;
+        $data->{URL} = $url;
+    }
+    assert_name($data);
+    $input{$data->{Name}} = $data;
+    return $data;
+}
+
+sub assert_name {
+    my $data = shift;
+    return if $data->{Name} and not $input{$data->{Name}};
+    my $name = $data->{URL} or XXX($data);
+    die $name if $name =~ /\s/;
+    $name =~ s!^https?://!!;
+    $name =~ s!/$!!;
+    die $name unless $name =~ /\w\.\w/;
+    XXX($data) if $input{$name};
+    $data->{Name} = $name;
+    $input{$name} = $data;
+}
+
+sub get_metadata {
+    my $meta = LoadFile($METAFILE);
+    die unless ref($meta) eq 'ARRAY';
+    my $i = 0;
+    for my $hash (@$meta) {
+        my $name = $hash->{Name} or XXX $hash;
+        $meta{$name} = $i++;
+    }
+    return $meta;
+}
+
+{
+    my $spreadsheet = Text::CSV::Slurp->load(file => $SPREADSHEET);
+    my $metadata = get_metadata();
+    for my $row (@$spreadsheet) {
+        my $data = reformat($row);
+        my $id = $data->{Name};
+        my $idx = $meta{$id};
+        if (not defined $idx) {
+            push @$metadata, $data;
+        }
+        else {
+            $metadata->[$idx] = $data;
+        }
+#         last if $main::x++ > 5;
+    }
+#     $#{$metadata} = 4;
+    DumpFile($METAFILE, $metadata);
+}

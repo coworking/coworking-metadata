@@ -9,5 +9,8 @@ metadata.yaml: sites.yaml
 metadata.json: metadata.yaml
 	$(YAML2JSON) $< > $@
 
+update1:
+	./bin/update-metadata-from-spreadsheet
+
 clean purge:
 	rm -f metadata.yaml metadata.json
