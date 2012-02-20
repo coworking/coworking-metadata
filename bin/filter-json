@@ -1,0 +1,17 @@
+#!/usr/bin/env perl
+
+use strict;
+use utf8;
+use lib 'lib';
+use Coworking::MetaData;
+use YAML::XS ':all';
+use JSON::XS;
+
+my $metadata_file = shift(@ARGV);
+my $filter = shift(@ARGV);
+
+print encode_json [
+    grep {
+        exists($_->{$filter});
+    } @{LoadFile($metadata_file)}
+];

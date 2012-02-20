@@ -10,8 +10,8 @@ metadata.yaml: $(SPREADSHEET)
 metadata.json: metadata.yaml
 	$(YAML2JSON) $< > $@
 
-metadata.jsonp: metadata.json
-	echo 'Coworking.add_metadata(' > $@
+metadata.jsonp: metadata.yaml
+	echo 'coworking.add_metadata(' > $@
 	./bin/filter-json $< geo >> $@
 	echo '' >> $@
 	echo ');' >> $@
